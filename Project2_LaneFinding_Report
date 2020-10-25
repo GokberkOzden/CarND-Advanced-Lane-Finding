@@ -1,0 +1,97 @@
+## Project 2 Report
+
+---
+
+**Advanced Lane Finding Project**
+
+The goals / steps of this project are the following:
+
+* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
+* Apply a distortion correction to raw images.
+* Use color transforms, gradients, etc., to create a thresholded binary image.
+* Apply a perspective transform to rectify binary image ("birds-eye view").
+* Detect lane pixels and fit to find the lane boundary.
+* Determine the curvature of the lane and vehicle position with respect to center.
+* Warp the detected lane boundaries back onto the original image.
+* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+
+## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
+
+### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+
+---
+
+### Camera Calibration
+
+#### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
+
+I have used camera_calibration function in my code. It can be found in lines between 14-64.
+Calibration images can be found in project2_outputs folder.
+
+
+### Pipeline
+
+Created pipeline is consist of couple of steps which are
+
+1. undistort the image
+
+    It is a simple function (lines 66-70) which uses cv2.undistort function with previously found mtx and dist values. Returns the undistorted image.
+    
+2. apply threshold
+
+    Defined in lines between 81-102. The threholds for HLS transform is defined as (90,255). After HLS transform, I choose to continue with S-channel. Take the derivarive in x and got the gradient in x using the threshold values (20,100). Then, I stack the color and gradient threholds together. At this point of code, I have failed to add directional gradient to code as well. I have got the gradient in y direction but I had some troubles at stacking three of them together.
+    
+3. Define points and warp image
+
+    4 points each for src and dst images are defined.
+    
+    Bottom Left: 280, 700 -> 250, 720
+    Top Left: 595, 460 -> 250, 0
+    Bottom Right:  1125, 700 -> 1065, 720
+    Top Right: 725, 460 -> 1065, 0
+    
+    Durign this point I couldn't decide which points to use at my application. So I looked up some different porjects to determine them.
+    
+    warp function is defined in lines 104-113.
+    
+4. Fit a polynomial for lane lines
+
+    I've used search_around_poly function defined between lines 234-294. This function calls another function 'fit_polynomial' which is defined between lines 191-220.
+    
+    fit_polynomial function identifies left and right lane line x and y cooridnates using sliding windows methods (defined between lines 115-181). Later second order polynomials are created for both lane lines. Created polynomials also drawn on the image with this function.
+    
+    In the class plt.plot function is used to draw on input image. But in my case, plt.plot function draw the lane lines on a seperate empty image. I had to use cv2.circle function for each x,y points.
+    
+    search_around_poly function creates a search area using the outputs of fit_polynomial and margin. Then uses fit_poly function (lines 222-232 : basicly same function as fit_polynomial). This function also draws found lane lines on top of them input image.
+      
+5. Get curvature and centre information from image
+
+    Three different functions are defined for this part between lines 295-337.
+    measure_curvature_pixels : Measures the curvature in pixels.
+    measure_curvature_meters : Measures the curvature in meters.
+    centre_offset : Measures car position offset.
+    
+   In the video I've seen some absurd values once in a while poping up the screen. This part might need a bettter calibration.
+   
+   I've calculated the centre offset by getting image middle point info and car position. Car is assumed to be in the middle point of left and right detected lines. Then I calculated how far away the car is from the middle point and scale it to meters.
+    
+
+    
+6. Display the lane and information on original image
+
+    To draw the lane on original image I've defined a function lane_on_original_image(lines 340-360) which creates a blank imahe to put the lanes. Then I used the inverse transformation matrix to warp the image back to original format and add the drawn lanes on top of the original image.
+    
+    Another function called info_print is defined to print curvature and centre offset information on top of tmage with lanes drawn on. This fucntion can be found in lines 362-374.
+    
+    
+
+All test image outputs can be found on the folder Project2_outputs.
+
+
+---
+
+### Discussion
+
+#### I have mentioned some problems I've run into during coding above. I need a better calibration at pixel to meter transform. I could'nt stack three thresholds values together too. Other than that when tested with video input. The code gives pretty good lane detection. I've seen no problems with shadows or color changes on the road. At the begining of a curve I've seen some little wobblings but not any major problem.
+
+When I tried challenge videos. I've got an error. I assumed it was because at same frames, no lane was detected and I should add some checks for that. But I couldn't figure out how to implement that part with my current knowledge of the language.
